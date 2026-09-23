@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ระบบติดตามการซ่อม</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/th.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0f1117;
+  --surface:#171b26;
+  --surface2:#1e2433;
+  --border:#2a3047;
+  --accent:#3b7fff;
+  --accent2:#00d4aa;
+  --warn:#f5a623;
+  --danger:#ff4d6a;
+  --success:#2ecc71;
+  --text:#e8eaf0;
+  --muted:#6b7494;
+  --tag-h:#fff9c4; --tag-h-t:#7a6800;
+  --tag-r:#ffe0b2; --tag-r-t:#7a3b00;
+  --tag-p:#e1f5fe; --tag-p-t:#01579b;
+  --tag-c:#f3e5f5; --tag-c-t:#4a148c;
+  --tag-a:#e8f5e9; --tag-a-t:#1b5e20;
+  --tag-o:#f5f5f5; --tag-o-t:#424242;
+  --radius:10px;
+  --mono:'IBM Plex Mono',monospace;
+}
+
+body{
+  font-family:'IBM Plex Sans Thai',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  font-size:14px;
+  line-height:1.6;
+}
+
+/* ── HEADER ── */
+.header{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  height:58px;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+.logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:.02em;
+}
+.logo-icon{
+  width:30px;height:30px;
+  background:var(--accent);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;
+}
+.header-actions{display:flex;gap:10px;}
+.btn{
+  padding:7px 16px;
+  border-radius:7px;
+  border:1px solid var(--border);
+  background:var(--surface2);
+  color:var(--text);
+  cursor:pointer;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:500;
+  transition:all .15s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-primary:hover{background:#5591ff;border-color:#5591ff;color:#fff;}
+.btn-danger{background:transparent;border-color:var(--danger);color:var(--danger);}
+.btn-danger:hover{background:var(--danger);color:#fff;}
+
+/* ── LAYOUT ── */
+.app{display:flex;height:calc(100vh - 58px);}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:220px;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:20px 12px;
+  display:flex;flex-direction:column;gap:4px;
+  flex-shrink:0;
+}
+.nav-item{
+  padding:9px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:13px;
+  color:var(--muted);
+  display:flex;align-items:center;gap:10px;
+  transition:all .15s;
+  font-weight:500;
+}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:rgba(59,127,255,.15);color:var(--accent);}
+.nav-icon{width:16px;text-align:center;font-size:14px;}
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;padding:24px 28px;}
+
+/* ── SUMMARY CARDS ── */
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:12px;
+  margin-bottom:24px;
+}
+.summary-card{
+  background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 16px;
+  cursor:default;
+  transition:all .2s;
+  position:relative;
+  overflow:hidden;
+}
+.summary-card::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--accent);
+  opacity:0;transition:opacity .2s;
+}
+.summary-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.summary-card:hover::before{opacity:1;}
+.summary-card .sc-val{
+  font-size:30px;font-weight:700;
+  font-family:var(--mono);
+  color:var(--text);
+  line-height:1;
+  margin-bottom:8px;
+}
+.summary-card .sc-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.sc-total .sc-val{color:var(--accent);}
+
+/* ── TOOLBAR ── */
+.toolbar{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:16px;
+  flex-wrap:wrap;
+}
+.search-box{
+  flex:1;min-width:200px;
+  position:relative;
+}
+.search-box input{
+  width:100%;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:9px 14px 9px 36px;
+  color:var(--text);
+  font-family:inherit;
+  font-size:13px;
+  outline:none;
+  transition:border-color .15s;
+}
+.search-box input:focus{border-color:var(--accent);}
+.search-box input::placeholder{color:var(--muted);}
+.search-icon{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-size:14px;pointer-events:none;
+}
+.filter-select{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:9px 12px;
+  color:var(--text);
+  font-family:inherit;
+  font-size:13px;
+  outline:none;
+  cursor:pointer;
+}
+
+/* ── TABLE ── */
+.table-wrap{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:auto;
+}
+.table-wrap table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:900px;
+}
+.table-wrap th{
+  background:#13172200;
+  background:linear-gradient(180deg,#1e2433 0%,#181c28 100%);
+  padding:12px 16px;
+  text-align:left;
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#8892b0;
+  border-bottom:2px solid var(--border);
+  white-space:nowrap;
+  position:sticky;top:0;z-index:1;
+}
+.table-wrap td{
+  padding:13px 16px;
+  border-bottom:1px solid rgba(42,48,71,.6);
+  font-size:13px;
+  vertical-align:middle;
+}
+.table-wrap tr:last-child td{border-bottom:none;}
+.table-wrap tbody tr{transition:background .12s;}
+.table-wrap tbody tr:nth-child(even){background:rgba(255,255,255,.02);}
+.table-wrap tbody tr:hover{background:rgba(59,127,255,.08);border-left:2px solid var(--accent);}
+
+.mono{font-family:var(--mono);font-size:12px;letter-spacing:.02em;}
+.id-cell{color:var(--accent);font-family:var(--mono);font-size:11px;font-weight:600;}
+
+/* ── STATUS BADGE ── */
+.badge{
+  display:inline-flex;align-items:center;
+  padding:3px 10px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:600;
+  white-space:nowrap;
+}
+.b-photo{background:var(--tag-h);color:var(--tag-h-t);}
+.b-quote{background:var(--tag-r);color:var(--tag-r-t);}
+.b-compare{background:var(--tag-p);color:var(--tag-p-t);}
+.b-check{background:var(--tag-c);color:var(--tag-c-t);}
+.b-approve{background:var(--tag-a);color:var(--tag-a-t);}
+.b-other{background:var(--tag-o);color:var(--tag-o-t);}
+
+.pill-progress{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:20px;
+  background:rgba(245,166,35,.12);color:var(--warn);
+  font-size:11px;font-weight:600;
+}
+.pill-done{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:20px;
+  background:rgba(46,204,113,.12);color:var(--success);
+  font-size:11px;font-weight:600;
+}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;}
+
+/* ── ROW ACTIONS ── */
+.row-actions{display:flex;gap:6px;}
+.icon-btn{
+  width:28px;height:28px;border-radius:6px;
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--muted);
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;
+  transition:all .15s;
+}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+.icon-btn.del:hover{border-color:var(--danger);color:var(--danger);}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.65);
+  display:flex;align-items:center;justify-content:center;
+  z-index:200;
+  opacity:0;pointer-events:none;
+  transition:opacity .2s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  width:480px;
+  max-width:95vw;
+  padding:28px;
+  transform:translateY(16px);
+  transition:transform .2s;
+}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.form-row{margin-bottom:14px;}
+.form-row label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.form-row input,.form-row select,.form-row textarea{
+  width:100%;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:9px 12px;
+  color:var(--text);
+  font-family:inherit;
+  font-size:13px;
+  outline:none;
+  transition:border-color .15s;
+}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--accent);}
+.form-row select option{background:var(--surface2);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;}
+
+/* ── UPDATE MODAL ── */
+.update-history{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:12px;
+  margin-bottom:14px;
+  font-size:12px;
+  color:var(--muted);
+  min-height:60px;
+}
+.upd-entry{padding:4px 0;border-bottom:1px solid var(--border);color:var(--text);}
+.upd-entry:last-child{border-bottom:none;}
+.upd-time{color:var(--accent);font-family:var(--mono);font-size:11px;}
+
+/* ── EMPTY STATE ── */
+.empty{
+  text-align:center;padding:60px 20px;
+  color:var(--muted);
+}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.4;}
+
+.upd-badge{
+  display:inline-flex;align-items:center;
+  padding:3px 10px;border-radius:20px;
+  font-size:11px;font-weight:600;
+}
+.upd-green{background:rgba(46,204,113,.15);color:#2ecc71;}
+.upd-yellow{background:rgba(245,166,35,.15);color:#f5a623;}
+.upd-red{background:rgba(255,77,106,.15);color:#ff4d6a;}
+
+/* ── FLATPICKR OVERRIDES ── */
+.flatpickr-calendar{
+  background:var(--surface2) !important;
+  border:1px solid var(--border) !important;
+  border-radius:10px !important;
+  box-shadow:0 8px 32px rgba(0,0,0,.4) !important;
+  color:var(--text) !important;
+}
+.flatpickr-day{color:var(--text) !important;border-radius:6px !important;}
+.flatpickr-day:hover{background:var(--accent) !important;color:#fff !important;}
+.flatpickr-day.selected{background:var(--accent) !important;border-color:var(--accent) !important;color:#fff !important;}
+.flatpickr-day.today{border-color:var(--accent2) !important;color:var(--accent2) !important;}
+.flatpickr-months,.flatpickr-weekdays{background:var(--surface) !important;}
+.flatpickr-month{color:var(--text) !important;fill:var(--text) !important;}
+.flatpickr-weekday{color:var(--muted) !important;}
+.flatpickr-prev-month,.flatpickr-next-month{color:var(--text) !important;fill:var(--text) !important;}
+.numInputWrapper input{color:var(--text) !important;background:transparent !important;}
+/* ── ANIMATIONS ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.table-wrap tbody tr{animation:fadeIn .2s ease both;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px 18px;
+  font-size:13px;
+  color:var(--text);
+  z-index:300;
+  display:flex;align-items:center;gap:10px;
+  transform:translateY(80px);
+  opacity:0;
+  transition:all .25s;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:var(--success);}
+.toast.error{border-color:var(--danger);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">🔧</div>
+    ระบบติดตามการซ่อม
+  </div>
+  <div class="header-actions">
+    <button class="btn" onclick="exportCSV()">⬇ Export</button>
+    <button class="btn" onclick="triggerImport()">⬆ Import</button>
+    <input type="file" id="importFile" accept=".csv" style="display:none" onchange="importCSV(event)"/>
+    <button class="btn" onclick="openCalcModal()">🧮 คำนวณ</button>
+    <button class="btn btn-primary" onclick="openAddModal()">+ เพิ่มรายการ</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-item active" onclick="setView('all',this)">
+      <span class="nav-icon">📋</span> รายการทั้งหมด
+    </div>
+    <div class="nav-item" onclick="setView('ขอรูปรถ',this)">
+      <span class="nav-icon">📷</span> ขอรูปรถ
+    </div>
+    <div class="nav-item" onclick="setView('รอใบเสนอราคา',this)">
+      <span class="nav-icon">📄</span> รอใบเสนอราคา
+    </div>
+    <div class="nav-item" onclick="setView('เทียบราคา',this)">
+      <span class="nav-icon">💰</span> เทียบราคา
+    </div>
+    <div class="nav-item" onclick="setView('เช็คกับสาขา',this)">
+      <span class="nav-icon">🏢</span> เช็คกับสาขา
+    </div>
+    <div class="nav-item" onclick="setView('อนุมัติซ่อม',this)">
+      <span class="nav-icon">✅</span> อนุมัติซ่อม
+    </div>
+    <div class="nav-item" onclick="setView('อื่นๆ',this)">
+      <span class="nav-icon">📌</span> อื่นๆ
+    </div>
+    <div style="border-top:1px solid var(--border);margin:8px 0"></div>
+    <div style="font-size:11px;color:var(--muted);padding:4px 14px;text-transform:uppercase;letter-spacing:.06em">การอัพเดท</div>
+    <div class="nav-item" onclick="setView('upd1',this)">
+      <span class="nav-icon">🟢</span> อัพเดท 1 ครั้ง
+    </div>
+    <div class="nav-item" onclick="setView('upd2',this)">
+      <span class="nav-icon">🟡</span> อัพเดท 2 ครั้ง
+    </div>
+    <div class="nav-item" onclick="setView('upd3',this)">
+      <span class="nav-icon">🔴</span> อัพเดท 3+ ครั้ง
+    </div>
+    <div style="border-top:1px solid var(--border);margin:8px 0"></div>
+    <div class="nav-item" onclick="setView('waiting',this)" id="nav-waiting">
+      <span class="nav-icon">⏰</span> รอติดตาม <span id="waiting-count" style="margin-left:auto;background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:8px 0"></div>
+    <div class="nav-item" onclick="openReportView(this)">
+      <span class="nav-icon">📊</span> รายงาน
+    </div>
+  </nav>
+
+  <!-- REPORT VIEW -->
+  <div id="reportView" style="display:none">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px">
+      <div style="font-size:15px;font-weight:600;margin-bottom:16px">📊 รายงานสถานะการซ่อม</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="form-row">
+          <label>จังหวัด</label>
+          <select id="rpt-province" class="filter-select" style="width:100%" onchange="renderReport()">
+            <option value="">ทุกจังหวัด</option>
+            <option>BKA</option><option>BKB</option><option>BKC</option>
+            <option>PYA</option><option>HHM</option><option>CMA</option>
+            <option>CRA</option><option>NNA</option><option>PLA</option>
+            <option>KKA</option><option>UDA</option><option>UBA</option>
+            <option>BFA</option><option>KOA</option><option>PKA</option>
+            <option>KVB</option><option>SMA</option><option>HYA</option>
+            <option>SRA</option><option>NRA</option><option>TGA</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>สถานะการซ่อม</label>
+          <select id="rpt-status" class="filter-select" style="width:100%" onchange="renderReport()">
+            <option value="">ทุกสถานะ</option>
+            <option>ขอรูปรถ</option>
+            <option>รอใบเสนอราคา</option>
+            <option>เทียบราคา</option>
+            <option>เช็คกับสาขา</option>
+            <option>อนุมัติซ่อม</option>
+            <option>อื่นๆ</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div id="rpt-count" style="font-size:13px;color:var(--muted)"></div>
+        <button class="btn btn-primary" onclick="sendReportLINE()">📲 ส่ง LINE</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>รหัส</th>
+              <th>แฟ้มซ่อม</th>
+              <th>ทะเบียน</th>
+              <th>MVA</th>
+              <th>จังหวัด</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="rpt-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="mainView">
+    <div class="summary-grid">
+      <div class="summary-card sc-total">
+        <div class="sc-val" id="cnt-total">0</div>
+        <div class="sc-label">ทั้งหมด</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-val" id="cnt-photo" style="color:#b8860b">0</div>
+        <div class="sc-label">ขอรูปรถ</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-val" id="cnt-quote" style="color:#e65c00">0</div>
+        <div class="sc-label">รอใบเสนอราคา</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-val" id="cnt-compare" style="color:#0277bd">0</div>
+        <div class="sc-label">เทียบราคา</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-val" id="cnt-check" style="color:#6a1b9a">0</div>
+        <div class="sc-label">เช็คกับสาขา</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-val" id="cnt-approve" style="color:#2e7d32">0</div>
+        <div class="sc-label">อนุมัติซ่อม</div>
+      </div>
+      <div class="summary-card">
+        <div class="sc-val" id="cnt-other" style="color:#616161">0</div>
+        <div class="sc-label">อื่นๆ</div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="ค้นหา แฟ้มซ่อม, ทะเบียน, MVA..." id="searchInput" oninput="renderTable()"/>
+      </div>
+      <select class="filter-select" id="filterStatus" onchange="renderTable()">
+        <option value="">ทุกสถานะ</option>
+        <option>ขอรูปรถ</option>
+        <option>รอใบเสนอราคา</option>
+        <option>เทียบราคา</option>
+        <option>เช็คกับสาขา</option>
+        <option>อนุมัติซ่อม</option>
+        <option>อื่นๆ</option>
+      </select>
+      <select class="filter-select" id="filterProvince" onchange="renderTable()">
+        <option value="">ทุกจังหวัด</option>
+        <option>BKA</option><option>BKB</option><option>BKC</option>
+        <option>PYA</option><option>HHM</option><option>CMA</option>
+        <option>CRA</option><option>NNA</option><option>PLA</option>
+        <option>KKA</option><option>UDA</option><option>UBA</option>
+        <option>BFA</option><option>KOA</option><option>PKA</option>
+        <option>KVB</option><option>SMA</option><option>HYA</option>
+        <option>SRA</option><option>NRA</option><option>TGA</option>
+      </select>
+      <select class="filter-select" id="filterFinal" onchange="renderTable()">
+        <option value="">ทุกสถานะการดำเนิน</option>
+        <option>In Progress</option>
+        <option>Completed</option>
+      </select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>รหัส</th>
+            <th>แฟ้มซ่อม</th>
+            <th>ทะเบียน</th>
+            <th>MVA</th>
+            <th>จังหวัด</th>
+            <th>อาการ</th>
+            <th>สถานะการซ่อม</th>
+            <th>วันที่ได้รับ</th>
+            <th>การอัพเดท</th>
+            <th>สถานะ</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+  </main>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-title">➕ เพิ่มรายการซ่อมใหม่</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>แฟ้มซ่อม *</label>
+        <input id="in-file"/>
+      </div>
+      <div class="form-row">
+        <label>ทะเบียน *</label>
+        <input id="in-plate"/>
+      </div>
+      <div class="form-row">
+        <label>MVA</label>
+        <input id="in-mva"/>
+      </div>
+      <div class="form-row">
+        <label>จังหวัด</label>
+        <select id="in-province">
+          <option value="">-- เลือกจังหวัด --</option>
+          <option>BKA</option>
+          <option>BKB</option>
+          <option>BKC</option>
+          <option>PYA</option>
+          <option>HHM</option>
+          <option>CMA</option>
+          <option>CRA</option>
+          <option>NNA</option>
+          <option>PLA</option>
+          <option>KKA</option>
+          <option>UDA</option>
+          <option>UBA</option>
+          <option>BFA</option>
+          <option>KOA</option>
+          <option>PKA</option>
+          <option>KVB</option>
+          <option>SMA</option>
+          <option>HYA</option>
+          <option>SRA</option>
+          <option>NRA</option>
+          <option>TGA</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>อาการ</label>
+      <input id="in-type"/>
+    </div>
+    <div class="form-row">
+      <label>สถานะการซ่อม</label>
+      <select id="in-status">
+        <option>ขอรูปรถ</option>
+        <option>รอใบเสนอราคา</option>
+        <option>เทียบราคา</option>
+        <option>เช็คกับสาขา</option>
+        <option>อนุมัติซ่อม</option>
+        <option>อื่นๆ</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('addModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="addRecord()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">📝 แก้ไขรายการ <span id="edit-id-label" style="font-family:var(--mono);font-size:13px;color:var(--accent)"></span></div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>แฟ้มซ่อม *</label>
+        <input id="edit-file"/>
+      </div>
+      <div class="form-row">
+        <label>ทะเบียน *</label>
+        <input id="edit-plate"/>
+      </div>
+      <div class="form-row">
+        <label>MVA</label>
+        <input id="edit-mva"/>
+      </div>
+      <div class="form-row">
+        <label>จังหวัด</label>
+        <select id="edit-province">
+          <option value="">-- เลือกจังหวัด --</option>
+          <option>BKA</option><option>BKB</option><option>BKC</option>
+          <option>PYA</option><option>HHM</option><option>CMA</option>
+          <option>CRA</option><option>NNA</option><option>PLA</option>
+          <option>KKA</option><option>UDA</option><option>UBA</option>
+          <option>BFA</option><option>KOA</option><option>PKA</option>
+          <option>KVB</option><option>SMA</option><option>HYA</option>
+          <option>SRA</option><option>NRA</option><option>TGA</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>อาการ</label>
+      <input id="edit-type"/>
+    </div>
+    <div class="form-row">
+      <label>สถานะการซ่อม</label>
+      <select id="edit-status">
+        <option>ขอรูปรถ</option>
+        <option>รอใบเสนอราคา</option>
+        <option>เทียบราคา</option>
+        <option>เช็คกับสาขา</option>
+        <option>อนุมัติซ่อม</option>
+        <option>อื่นๆ</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('editModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveEdit()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPDATE MODAL -->
+<div class="modal-overlay" id="updateModal">
+  <div class="modal">
+    <div class="modal-title">✏️ อัพเดทรายการ <span id="upd-id-label" style="font-family:var(--mono);font-size:13px;color:var(--accent)"></span></div>
+    <div class="form-row">
+      <label>ประวัติการอัพเดท</label>
+      <div class="update-history" id="upd-history">-</div>
+    </div>
+    <div class="form-row">
+      <label>เปลี่ยนสถานะการซ่อม</label>
+      <select id="upd-status">
+        <option>ขอรูปรถ</option>
+        <option>รอใบเสนอราคา</option>
+        <option>เทียบราคา</option>
+        <option>เช็คกับสาขา</option>
+        <option>อนุมัติซ่อม</option>
+        <option>อื่นๆ</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>หมายเหตุ</label>
+      <input id="upd-note" placeholder="รายละเอียดเพิ่มเติม..."/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('updateModal')">ปิด</button>
+      <button class="btn" id="upd-complete-btn" onclick="markCompleted()" style="display:none;background:var(--success);border-color:var(--success);color:#fff">🏁 Completed</button>
+      <button class="btn btn-primary" id="upd-save-btn" onclick="saveUpdate()">บันทึก</button>
+    </div>
+    <div id="upd-completed-msg" style="display:none;margin-top:12px;text-align:center;background:rgba(46,204,113,.1);border:1px solid var(--success);border-radius:8px;padding:10px;color:var(--success);font-size:13px;font-weight:600">✅ รายการนี้ Completed แล้ว ไม่สามารถอัพเดทได้</div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="width:380px">
+    <div class="modal-title" style="color:var(--danger)">🗑️ ยืนยันการลบ</div>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:8px">คุณต้องการลบรายการนี้ใช่หรือไม่?</p>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:4px" id="del-label"></div>
+    <p style="color:var(--danger);font-size:12px;margin-top:8px">การลบไม่สามารถกู้คืนได้</p>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('deleteModal')">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">ลบ</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALCULATOR MODAL -->
+<div class="modal-overlay" id="calcModal">
+  <div class="modal" style="width:420px">
+    <div class="modal-title">🧮 คำนวณระยะวัน + ลบตัวเลข</div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">📅 คำนวณระยะวัน</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>วันที่เริ่ม</label>
+          <input type="text" id="calc-date1" placeholder="dd/mm/yyyy" readonly/>
+        </div>
+        <div class="form-row">
+          <label>วันที่สิ้นสุด</label>
+          <input type="text" id="calc-date2" placeholder="dd/mm/yyyy" readonly/>
+        </div>
+      </div>
+      <div id="calc-date-result" style="margin-top:8px;font-size:13px;color:var(--accent2);font-weight:600;min-height:20px"></div>
+    </div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">🔢 ลบตัวเลข</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>ตัวเลข 1</label>
+          <input type="number" id="calc-num1" placeholder="0" oninput="calcNum()"/>
+        </div>
+        <div class="form-row">
+          <label>ตัวเลข 2</label>
+          <input type="number" id="calc-num2" placeholder="0" oninput="calcNum()"/>
+        </div>
+      </div>
+      <div id="calc-num-result" style="margin-top:8px;font-size:13px;color:var(--accent2);font-weight:600;min-height:20px"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" onclick="clearCalc()">ล้าง</button>
+      <button class="btn btn-primary" onclick="calcDate()">คำนวณวัน</button>
+      <button class="btn" onclick="closeModal('calcModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwjszKvV_OrCO7GD2QThPwjanH7hFjgTIDprAd-QHcIiU-Xos6YONnjZk8MSmbS8mes/exec';
+
+// ── LINE NOTIFY ──
+function notifyGAS(params){
+  const url = GAS_URL + '?' + Object.entries(params).map(([k,v])=>
+    encodeURIComponent(k)+'='+encodeURIComponent(v||'')
+  ).join('&');
+  fetch(url).catch(err=>console.log('GAS notify error:',err));
+}
+
+// ── DATA STORE ──
+let records = JSON.parse(localStorage.getItem('repair_records') || '[]');
+let currentFilter = 'all';
+let editingId = null;
+let pendingDeleteId = null;
+
+function save(){ localStorage.setItem('repair_records', JSON.stringify(records)); }
+
+function genId(){
+  const d = new Date();
+  const dateStr = d.getFullYear()
+    + String(d.getMonth()+1).padStart(2,'0')
+    + String(d.getDate()).padStart(2,'0');
+  // หาเลขลำดับสูงสุดของวันนี้
+  const todayIds = records
+    .filter(r => r.id.startsWith(dateStr))
+    .map(r => parseInt(r.id.replace(dateStr + 'F', '')) || 0);
+  const maxSeq = todayIds.length ? Math.max(...todayIds) : 0;
+  return dateStr + 'F' + String(maxSeq + 1).padStart(3,'0');
+}
+
+function today(){
+  return new Date().toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'});
+}
+
+function nowStr(){
+  const d = new Date();
+  const date = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return `${date} ${time}`;
+}
+
+
+
+// ── EDIT RECORD ──
+function openEditModal(id){
+  const r = records.find(x=>x.id===id);
+  if(!r) return;
+  editingId = id;
+  document.getElementById('edit-id-label').textContent='#'+id;
+  document.getElementById('edit-file').value     = r.file||'';
+  document.getElementById('edit-plate').value    = r.plate||'';
+  document.getElementById('edit-mva').value      = r.mva||'';
+  document.getElementById('edit-province').value = r.province||'';
+  document.getElementById('edit-type').value     = r.type||'';
+  document.getElementById('edit-status').value   = r.status||'ขอรูปรถ';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function saveEdit(){
+  const r = records.find(x=>x.id===editingId);
+  if(!r) return;
+  const file  = document.getElementById('edit-file').value.trim();
+  const plate = document.getElementById('edit-plate').value.trim();
+  if(!file||!plate){ toast('กรุณากรอกแฟ้มซ่อมและทะเบียน','error'); return; }
+  r.file     = file;
+  r.plate    = plate;
+  r.mva      = document.getElementById('edit-mva').value.trim();
+  r.province = document.getElementById('edit-province').value;
+  r.type     = document.getElementById('edit-type').value.trim();
+  r.status   = document.getElementById('edit-status').value;
+  save(); renderTable(); closeModal('editModal');
+  toast('✅ แก้ไขข้อมูลแล้ว','success');
+}
+
+// ── IMPORT CSV ──
+function triggerImport(){
+  document.getElementById('importFile').value='';
+  document.getElementById('importFile').click();
+}
+
+function importCSV(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const text = e.target.result.replace(/^\uFEFF/,'');
+      const lines = text.split('\n').filter(l=>l.trim());
+      if(lines.length < 2){ toast('ไฟล์ไม่มีข้อมูล','error'); return; }
+
+      const parseRow = line => {
+        const result = [];
+        let cur = '', inQ = false;
+        for(let c of line){
+          if(c==='"'){ inQ=!inQ; }
+          else if(c===','&&!inQ){ result.push(cur); cur=''; }
+          else cur+=c;
+        }
+        result.push(cur);
+        return result.map(v=>v.trim());
+      };
+
+      const imported = [];
+      for(let i=1; i<lines.length; i++){
+        const col = parseRow(lines[i]);
+        if(!col[0]) continue;
+        const updates = col.slice(8,18).filter(Boolean);
+        imported.push({
+          id:col[0]||'', file:col[1]||'', plate:col[2]||'',
+          mva:col[3]||'', province:col[4]||'', type:col[5]||'',
+          status:col[6]||'ขอรูปรถ', dateIn:col[7]||'',
+          updates:updates, upd1:'', upd2:'', upd3:'',
+          final:col[18]||'In Progress',
+        });
+      }
+      if(!imported.length){ toast('ไม่พบข้อมูลในไฟล์','error'); return; }
+      records = imported;
+      save(); renderTable();
+      toast(`✅ Import สำเร็จ ${imported.length} รายการ`,'success');
+    } catch(err){
+      toast('❌ เกิดข้อผิดพลาด: '+err.message,'error');
+    }
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+// ── AUTO BACKUP ──
+function autoBackup(){
+  if(!records.length) return;
+  const today = new Date().toLocaleDateString('th-TH').replace(/\//g,'-');
+  const lastBackup = localStorage.getItem('last_backup_date');
+  if(lastBackup === today) return; // backup แล้ววันนี้
+
+  const updHeaders = Array.from({length:10},(_,i)=>`อัพเดท${i+1}`);
+  const headers = ['รหัส','แฟ้มซ่อม','ทะเบียน','MVA','จังหวัด','อาการ','สถานะการซ่อม','วันที่ได้รับ',...updHeaders,'สถานะ'];
+  const rows = records.map(r=>{
+    const upds = (r.updates||[]).concat([r.upd1,r.upd2,r.upd3].filter(Boolean));
+    const updCols = Array.from({length:10},(_,i)=>upds[i]||'');
+    return [r.id,r.file,r.plate,r.mva,r.province,r.type,r.status,r.dateIn,...updCols,r.final]
+      .map(v=>'"'+String(v||'').replace(/"/g,'""')+'"');
+  });
+  const csv = '\uFEFF' + [headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `repair_backup_${today}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  localStorage.setItem('last_backup_date', today);
+  toast('💾 Backup อัตโนมัติแล้ว','success');
+}
+function exportCSV(){
+  if(!records.length){ toast('ไม่มีข้อมูลให้ Export','error'); return; }
+  const updHeaders = Array.from({length:10},(_,i)=>`อัพเดท${i+1}`);
+  const headers = ['รหัส','แฟ้มซ่อม','ทะเบียน','MVA','จังหวัด','อาการ','สถานะการซ่อม','วันที่ได้รับ',...updHeaders,'สถานะ'];
+  const rows = records.map(r=>{
+    const upds = (r.updates||[]).concat([r.upd1,r.upd2,r.upd3].filter(Boolean));
+    const updCols = Array.from({length:10},(_,i)=>upds[i]||'');
+    return [
+      r.id, r.file, r.plate, r.mva, r.province, r.type,
+      r.status, r.dateIn,
+      ...updCols,
+      r.final
+    ].map(v=>'"'+String(v||'').replace(/"/g,'""')+'"');
+  });
+  const csv = '\uFEFF' + [headers, ...rows].map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toLocaleDateString('th-TH').replace(/\//g,'-');
+  a.href = url;
+  a.download = `repair_${date}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ Export สำเร็จ','success');
+}
+
+function updBadge(r){
+  const count = (r.updates||[]).concat([r.upd1,r.upd2,r.upd3].filter(Boolean)).length;
+  if(count===0) return '<span style="color:var(--muted);font-size:12px">-</span>';
+  if(count===1) return `<span class="upd-badge upd-green">อัพเดท ${count} ครั้ง</span>`;
+  if(count===2) return `<span class="upd-badge upd-yellow">อัพเดท ${count} ครั้ง</span>`;
+  return `<span class="upd-badge upd-red">อัพเดท ${count} ครั้ง</span>`;
+}
+
+// ── RENDER ──
+function badgeClass(s){
+  const m={'ขอรูปรถ':'b-photo','รอใบเสนอราคา':'b-quote','เทียบราคา':'b-compare',
+    'เช็คกับสาขา':'b-check','อนุมัติซ่อม':'b-approve','อื่นๆ':'b-other'};
+  return m[s]||'b-other';
+}
+
+function parseThaiDate(str){
+  if(!str) return null;
+  // รองรับ dd/mm/yyyy และ yyyy-mm-dd
+  str = String(str).trim();
+  const m1 = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m1){
+    let y = parseInt(m1[3]);
+    if(y > 2400) y -= 543; // แปลงปีพุทธศักราชเป็นคริสต์ศักราช
+    return new Date(`${y}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`);
+  }
+  const m2 = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m2) return new Date(`${m2[1]}-${m2[2]}-${m2[3]}`);
+  return null;
+}
+
+function getLastUpdatedDate(r){
+  const all = (r.updates||[]).concat([r.upd1,r.upd2,r.upd3].filter(Boolean));
+  if(all.length){
+    // อ่านวันที่จาก entry ล่าสุด
+    const last = all[all.length-1];
+    const d = parseThaiDate(last);
+    if(d) return d;
+  }
+  // ถ้าไม่มีอัพเดทเลย ใช้วันที่เพิ่มรายการ
+  return parseThaiDate(r.dateIn);
+}
+
+function isWaiting(r){
+  if(r.final==='Completed') return false;
+  const all = (r.updates||[]).concat([r.upd1,r.upd2,r.upd3].filter(Boolean));
+  if(!all.length) return false; // ยังไม่เคยอัพเดทเลย ไม่ขึ้น
+  const d = parseThaiDate(all[all.length-1]);
+  if(!d) return false;
+  const diff = (new Date() - d) / (1000*60*60*24);
+  return diff >= 3;
+}
+
+function renderTable(){
+  const kw = document.getElementById('searchInput').value.toLowerCase();
+  const fs = document.getElementById('filterStatus').value;
+  const ff = document.getElementById('filterFinal').value;
+  const fp = document.getElementById('filterProvince').value;
+
+  // อัพเดทจำนวนรอติดตาม
+  const waitingCount = records.filter(isWaiting).length;
+  const wBadge = document.getElementById('waiting-count');
+  if(waitingCount>0){ wBadge.textContent=waitingCount; wBadge.style.display='inline'; }
+  else wBadge.style.display='none';
+
+  let rows = records.filter(r=>{
+    const match = [r.id,r.file,r.plate,r.mva,r.province,r.type,r.status]
+      .join(' ').toLowerCase().includes(kw);
+    const ms = !fs || r.status===fs;
+    const mf = !ff || r.final===ff;
+    const mp = !fp || r.province===fp;
+    const updCount = (r.updates||[]).concat([r.upd1,r.upd2,r.upd3].filter(Boolean)).length;
+    let mv = true;
+    if(currentFilter==='waiting') mv = isWaiting(r);
+    else if(currentFilter==='upd1') mv = updCount===1 && r.final!=='Completed';
+    else if(currentFilter==='upd2') mv = updCount===2 && r.final!=='Completed';
+    else if(currentFilter==='upd3') mv = updCount>=3 && r.final!=='Completed';
+    else mv = currentFilter==='all' || r.status===currentFilter;
+    return match && ms && mf && mp && mv;
+  });
+
+  const tbody = document.getElementById('tableBody');
+  if(!rows.length){
+    tbody.innerHTML=`<tr><td colspan="11">
+      <div class="empty"><div class="empty-icon">🔍</div><div>ไม่พบรายการ</div></div>
+    </td></tr>`;
+  } else {
+    tbody.innerHTML = rows.map((r,i)=>{
+      const waiting = isWaiting(r);
+      const d = getLastUpdatedDate(r);
+      const daysAgo = d ? Math.floor((new Date()-d)/(1000*60*60*24)) : 0;
+      const waitingTag = waiting
+        ? `<span style="margin-left:6px;font-size:10px;background:rgba(255,77,106,.15);color:var(--danger);border-radius:10px;padding:2px 7px;font-weight:600">⏰ ค้าง ${daysAgo} วัน</span>`
+        : '';
+      return `
+      <tr style="animation-delay:${i*0.03}s${waiting?';border-left:3px solid var(--danger)':''}">
+        <td class="id-cell">${r.id}</td>
+        <td><strong>${r.file}</strong>${waitingTag}</td>
+        <td class="mono">${r.plate}</td>
+        <td class="mono">${r.mva}</td>
+        <td>${r.province}</td>
+        <td>${r.type}</td>
+        <td><span class="badge ${badgeClass(r.status)}">${r.status}</span></td>
+        <td style="color:var(--muted);font-size:12px">${r.dateIn}</td>
+        <td>${updBadge(r)}</td>
+        <td>${r.final==='Completed'
+          ?'<span class="pill-done"><span class="dot"></span>Completed</span>'
+          :'<span class="pill-progress"><span class="dot"></span>In Progress</span>'
+        }</td>
+        <td>
+          <div class="row-actions">
+            <button class="icon-btn" title="แก้ไข" data-action="edit" data-id="${r.id}">📝</button>
+            <button class="icon-btn" title="อัพเดท" data-action="update" data-id="${r.id}">✏️</button>
+            <button class="icon-btn del" title="ลบ" data-action="delete" data-id="${r.id}">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  updateSummary();
+}
+
+function updateSummary(){
+  const cnt={total:records.length,photo:0,quote:0,compare:0,check:0,approve:0,other:0};
+  records.forEach(r=>{
+    if(r.status==='ขอรูปรถ') cnt.photo++;
+    else if(r.status==='รอใบเสนอราคา') cnt.quote++;
+    else if(r.status==='เทียบราคา') cnt.compare++;
+    else if(r.status==='เช็คกับสาขา') cnt.check++;
+    else if(r.status==='อนุมัติซ่อม') cnt.approve++;
+    else if(r.status==='อื่นๆ') cnt.other++;
+  });
+  document.getElementById('cnt-total').textContent=cnt.total;
+  document.getElementById('cnt-photo').textContent=cnt.photo;
+  document.getElementById('cnt-quote').textContent=cnt.quote;
+  document.getElementById('cnt-compare').textContent=cnt.compare;
+  document.getElementById('cnt-check').textContent=cnt.check;
+  document.getElementById('cnt-approve').textContent=cnt.approve;
+  document.getElementById('cnt-other').textContent=cnt.other;
+}
+
+// ── REPORT ──
+function openReportView(el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('reportView').style.display='';
+  document.getElementById('mainView').style.display='none';
+  renderReport();
+}
+
+function renderReport(){
+  const province = document.getElementById('rpt-province').value;
+  const status   = document.getElementById('rpt-status').value;
+
+  const rows = records.filter(r=>{
+    const mp = !province || r.province===province;
+    const ms = !status   || r.status===status;
+    return mp && ms && r.final!=='Completed';
+  });
+
+  document.getElementById('rpt-count').textContent = `พบ ${rows.length} รายการ`;
+
+  const tbody = document.getElementById('rpt-body');
+  if(!rows.length){
+    tbody.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔍</div><div>ไม่พบรายการ</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map((r,i)=>`
+    <tr style="animation-delay:${i*0.03}s">
+      <td class="id-cell">${r.id}</td>
+      <td><strong>${r.file}</strong></td>
+      <td class="mono">${r.plate}</td>
+      <td class="mono">${r.mva}</td>
+      <td>${r.province}</td>
+      <td><span class="badge ${badgeClass(r.status)}">${r.status}</span></td>
+    </tr>
+  `).join('');
+}
+
+function sendReportLINE(){
+  const province = document.getElementById('rpt-province').value;
+  const status   = document.getElementById('rpt-status').value;
+
+  const rows = records.filter(r=>{
+    const mp = !province || r.province===province;
+    const ms = !status   || r.status===status;
+    return mp && ms && r.final!=='Completed';
+  });
+
+  if(!rows.length){ toast('ไม่มีข้อมูลให้ส่ง','error'); return; }
+
+  const fileList = rows.map((r,i)=>`${i+1}. ${r.file}`).join('\n');
+  const msg = `📊 รายงานสถานะการซ่อม\n` +
+    `📍 จังหวัด: ${province||'ทุกจังหวัด'}\n` +
+    `📌 สถานะ: ${status||'ทุกสถานะ'}\n` +
+    `จำนวน ${rows.length} รายการ\n` +
+    `${'─'.repeat(20)}\n` + fileList;
+
+  notifyGAS({action:'report', message: msg});
+  toast('📲 ส่ง LINE แล้ว','success');
+}
+
+// ── VIEWS ──
+function setView(v, el){
+  currentFilter = v;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('reportView').style.display='none';
+  document.getElementById('mainView').style.display='';
+  renderTable();
+}
+
+// ── MODAL ──
+function openAddModal(){
+  ['in-file','in-plate','in-mva','in-province','in-type'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('in-status').value='ขอรูปรถ';
+  document.getElementById('addModal').classList.add('open');
+}
+
+function openUpdateModal(id){
+  const r = records.find(x=>x.id===id);
+  if(!r) return;
+  editingId = id;
+  document.getElementById('upd-id-label').textContent='#'+id;
+  document.getElementById('upd-status').value = r.status||'ขอรูปรถ';
+  document.getElementById('upd-note').value = '';
+
+  const isCompleted = r.final==='Completed';
+  const isApproved  = r.status==='อนุมัติซ่อม' && !isCompleted;
+  document.getElementById('upd-note').disabled       = isCompleted;
+  document.getElementById('upd-status').disabled     = isCompleted;
+  document.getElementById('upd-save-btn').style.display      = isCompleted ? 'none' : '';
+  document.getElementById('upd-complete-btn').style.display  = isApproved  ? ''     : 'none';
+  document.getElementById('upd-completed-msg').style.display = isCompleted ? ''     : 'none';
+
+  renderUpdateHistory(r);
+  document.getElementById('updateModal').classList.add('open');
+}
+
+function renderUpdateHistory(r){
+  // รวม entries ทั้งหมดเข้า r.updates array
+  if(!r.updates) r.updates = [];
+  const legacy = [r.upd1,r.upd2,r.upd3].filter(Boolean);
+  if(legacy.length){
+    r.updates = [...r.updates, ...legacy];
+    r.upd1=''; r.upd2=''; r.upd3='';
+  }
+  const entries = r.updates;
+  let hist = entries.length ? entries.map((e,idx)=>{
+    const sep = e.indexOf(': ');
+    const time = sep>-1 ? e.slice(0,sep) : '';
+    const msg  = sep>-1 ? e.slice(sep+2) : e;
+    return `<div class="upd-entry" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+      <div><span class="upd-time">${time}</span>${time?' — ':''}${msg}</div>
+      <button onclick="deleteUpdate(${idx})" style="flex-shrink:0;background:transparent;border:1px solid var(--danger);color:var(--danger);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:11px;line-height:1.4">ลบ</button>
+    </div>`;
+  }).join('') : '<span style="color:var(--muted)">ยังไม่มีประวัติ</span>';
+  document.getElementById('upd-history').innerHTML = hist;
+}
+
+function deleteUpdate(idx){
+  const r = records.find(x=>x.id===editingId);
+  if(!r||!r.updates) return;
+  r.updates.splice(idx, 1);
+  save();
+  renderUpdateHistory(r);
+  renderTable();
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+
+// ── EVENT DELEGATION for table buttons ──
+document.getElementById('tableBody').addEventListener('click', function(e){
+  const btn = e.target.closest('[data-action]');
+  if(!btn) return;
+  const action = btn.dataset.action;
+  const id     = btn.dataset.id;
+  if(action==='edit')   openEditModal(id);
+  if(action==='update') openUpdateModal(id);
+  if(action==='delete') deleteRecord(id);
+});
+
+// ── CRUD ──
+function addRecord(){
+  const file = document.getElementById('in-file').value.trim();
+  const plate = document.getElementById('in-plate').value.trim();
+  if(!file||!plate){ toast('กรุณากรอกแฟ้มซ่อมและทะเบียน','error'); return; }
+
+  const newRec = {
+    id: genId(),
+    file, plate,
+    mva: document.getElementById('in-mva').value.trim(),
+    province: document.getElementById('in-province').value,
+    type: document.getElementById('in-type').value.trim(),
+    status: document.getElementById('in-status').value,
+    dateIn: today(),
+    upd1:'', upd2:'', upd3:'',
+    final:'In Progress'
+  };
+  records.unshift(newRec);
+  save(); renderTable(); closeModal('addModal');
+  toast('✅ เพิ่มรายการแล้ว','success');
+  notifyGAS({action:'add', id:newRec.id, file:newRec.file, plate:newRec.plate, mva:newRec.mva, province:newRec.province, type:newRec.type, status:newRec.status});
+}
+
+function markCompleted(){
+  const r = records.find(x=>x.id===editingId);
+  if(!r) return;
+  if(!r.updates) r.updates=[];
+  r.final = 'Completed';
+  r.updates.push(`${nowStr()}: ปิดงาน Completed`);
+  save(); renderTable(); closeModal('updateModal');
+  toast('🏁 Completed แล้ว','success');
+  notifyGAS({action:'completed', id:r.id, file:r.file, plate:r.plate, mva:r.mva, province:r.province, status:r.status});
+}
+
+function saveUpdate(){
+  const r = records.find(x=>x.id===editingId);
+  if(!r) return;
+  const newStatus = document.getElementById('upd-status').value;
+  const note      = document.getElementById('upd-note').value.trim();
+  if(!r.updates) r.updates=[];
+  const oldStatus = r.status;
+
+  if(newStatus !== r.status){
+    r.updates.push(`${nowStr()}: เปลี่ยนสถานะ ${r.status} → ${newStatus}`);
+    r.status = newStatus;
+  }
+  if(note) r.updates.push(`${nowStr()}: ${note}`);
+
+  save(); renderTable(); closeModal('updateModal');
+  toast('✅ อัพเดทแล้ว','success');
+  notifyGAS({action:'update', id:r.id, file:r.file, plate:r.plate, oldStatus, status:newStatus, note});
+}
+
+function deleteRecord(id){
+  pendingDeleteId = id;
+  const r = records.find(x=>x.id===id);
+  document.getElementById('del-label').textContent = r ? `${r.file} | ${r.plate}` : id;
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+function confirmDelete(){
+  if(!pendingDeleteId) return;
+  records = records.filter(r=>r.id!==pendingDeleteId);
+  pendingDeleteId = null;
+  save(); renderTable(); closeModal('deleteModal');
+  toast('🗑️ ลบรายการแล้ว');
+}
+
+// ── TOAST ──
+function toast(msg, type=''){
+  const t = document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+(type||'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── CALCULATOR ──
+let fp1 = null, fp2 = null;
+
+function openCalcModal(){
+  document.getElementById('calcModal').classList.add('open');
+  // init flatpickr ครั้งแรก
+  if(!fp1){
+    const cfg = {
+      locale: 'th',
+      dateFormat: 'd/m/Y',
+      disableMobile: true,
+    };
+    fp1 = flatpickr('#calc-date1', cfg);
+    fp2 = flatpickr('#calc-date2', {...cfg, defaultDate: new Date()});
+  }
+}
+
+function calcDate(){
+  const v1 = document.getElementById('calc-date1').value;
+  const v2 = document.getElementById('calc-date2').value;
+  if(!v1||!v2){ document.getElementById('calc-date-result').textContent='⚠️ กรุณาเลือกวันที่ทั้งสอง'; return; }
+
+  const parse = s => { const [d,m,y]=s.split('/'); return new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`); };
+  let start = parse(v1);
+  let end   = parse(v2);
+  if(start > end){ const tmp=start; start=end; end=tmp; }
+
+  // คำนวณวันรวม
+  const days = Math.round((end - start) / (1000*60*60*24));
+
+  // คำนวณปี เดือน วัน แบบนับจริง
+  let years  = end.getFullYear() - start.getFullYear();
+  let months = end.getMonth()    - start.getMonth();
+  let remDay = end.getDate()     - start.getDate();
+
+  if(remDay < 0){
+    months--;
+    // หาจำนวนวันของเดือนก่อนหน้า
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    remDay += prevMonth.getDate();
+  }
+  if(months < 0){ years--; months += 12; }
+
+  let txt = `ผลต่างวัน: ${days.toLocaleString()} วัน`;
+  if(years||months||remDay){
+    txt += ` (≈ `;
+    if(years)  txt += `${years} ปี `;
+    if(months) txt += `${months} เดือน `;
+    if(remDay) txt += `${remDay} วัน`;
+    txt = txt.trimEnd() + `)`;
+  }
+  document.getElementById('calc-date-result').textContent = txt;
+}
+
+function calcNum(){
+  const n1 = parseFloat(document.getElementById('calc-num1').value);
+  const n2 = parseFloat(document.getElementById('calc-num2').value);
+  if(isNaN(n1)||isNaN(n2)){ document.getElementById('calc-num-result').textContent=''; return; }
+  const result = n1 - n2;
+  document.getElementById('calc-num-result').textContent =
+    `ผลลบตัวเลข: ${n1.toLocaleString()} - ${n2.toLocaleString()} = ${result.toLocaleString()}`;
+}
+
+function clearCalc(){
+  if(fp1) fp1.clear();
+  if(fp2) fp2.clear();
+  ['calc-num1','calc-num2'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('calc-date-result').textContent='';
+  document.getElementById('calc-num-result').textContent='';
+}
+
+// ── INIT ──
+renderTable();
+autoBackup();
+</script>
+</body>
+</html>
