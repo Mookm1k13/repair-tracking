@@ -101,6 +101,8 @@ body{
   padding:20px 12px;
   display:flex;flex-direction:column;gap:4px;
   flex-shrink:0;
+  transition:all .25s;
+  overflow-y:auto;
 }
 .nav-item{
   padding:9px 14px;
@@ -111,13 +113,63 @@ body{
   display:flex;align-items:center;gap:10px;
   transition:all .15s;
   font-weight:500;
+  white-space:nowrap;
+  overflow:hidden;
 }
 .nav-item:hover{background:var(--surface2);color:var(--text);}
 .nav-item.active{background:rgba(59,127,255,.15);color:var(--accent);}
-.nav-icon{width:16px;text-align:center;font-size:14px;}
+.nav-icon{width:16px;text-align:center;font-size:14px;flex-shrink:0;}
+.nav-label{transition:opacity .2s;}
+
+/* Tablet — ซ่อน label เหลือแค่ icon */
+@media(max-width:900px){
+  .sidebar{width:52px;padding:12px 6px;}
+  .nav-label{display:none;}
+  .nav-item{padding:10px;justify-content:center;}
+  .sidebar-section-label{display:none;}
+}
+
+/* Mobile — ซ่อน sidebar ทั้งหมด */
+@media(max-width:600px){
+  .sidebar{
+    position:fixed;left:0;top:58px;bottom:0;
+    width:220px;z-index:50;
+    transform:translateX(-100%);
+    padding:20px 12px;
+  }
+  .sidebar.open{transform:translateX(0);}
+  .nav-label{display:block !important;}
+  .nav-item{padding:9px 14px;justify-content:flex-start;}
+  .sidebar-section-label{display:block !important;}
+  .sidebar-overlay{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(0,0,0,.5);
+    z-index:49;
+  }
+  .sidebar-overlay.open{display:block;}
+  .main{padding:16px;}
+}
 
 /* ── MAIN ── */
-.main{flex:1;overflow-y:auto;padding:24px 28px;}
+.main{flex:1;overflow-y:auto;padding:24px 28px;min-width:0;}
+#mainView, #reportView{width:100%;}
+
+/* ── MENU BUTTON (mobile only) ── */
+.menu-btn{
+  display:none;
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:7px;
+  padding:6px 10px;
+  cursor:pointer;
+  font-size:16px;
+}
+@media(max-width:600px){
+  .menu-btn{display:flex;align-items:center;justify-content:center;}
+  .main{padding:12px;}
+}
 
 /* ── SUMMARY CARDS ── */
 .summary-grid{
@@ -403,6 +455,7 @@ body{
 <!-- HEADER -->
 <header class="header">
   <div class="logo">
+    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
     <div class="logo-icon">🔧</div>
     ระบบติดตามการซ่อม
   </div>
@@ -415,51 +468,54 @@ body{
   </div>
 </header>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <div class="app">
   <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="nav-item active" onclick="setView('all',this)">
-      <span class="nav-icon">📋</span> รายการทั้งหมด
+      <span class="nav-icon">📋</span><span class="nav-label"> รายการทั้งหมด</span>
     </div>
+    <div style="font-size:11px;color:var(--muted);padding:4px 14px;text-transform:uppercase;letter-spacing:.06em" class="sidebar-section-label">สถานะ</div>
     <div class="nav-item" onclick="setView('ขอรูปรถ',this)">
-      <span class="nav-icon">📷</span> ขอรูปรถ
+      <span class="nav-icon">📷</span><span class="nav-label"> ขอรูปรถ</span>
     </div>
     <div class="nav-item" onclick="setView('รอใบเสนอราคา',this)">
-      <span class="nav-icon">📄</span> รอใบเสนอราคา
+      <span class="nav-icon">📄</span><span class="nav-label"> รอใบเสนอราคา</span>
     </div>
     <div class="nav-item" onclick="setView('เทียบราคา',this)">
-      <span class="nav-icon">💰</span> เทียบราคา
+      <span class="nav-icon">💰</span><span class="nav-label"> เทียบราคา</span>
     </div>
     <div class="nav-item" onclick="setView('เช็คกับสาขา',this)">
-      <span class="nav-icon">🏢</span> เช็คกับสาขา
+      <span class="nav-icon">🏢</span><span class="nav-label"> เช็คกับสาขา</span>
     </div>
     <div class="nav-item" onclick="setView('อนุมัติซ่อม',this)">
-      <span class="nav-icon">✅</span> อนุมัติซ่อม
+      <span class="nav-icon">✅</span><span class="nav-label"> อนุมัติซ่อม</span>
     </div>
     <div class="nav-item" onclick="setView('อื่นๆ',this)">
-      <span class="nav-icon">📌</span> อื่นๆ
+      <span class="nav-icon">📌</span><span class="nav-label"> อื่นๆ</span>
     </div>
     <div style="border-top:1px solid var(--border);margin:8px 0"></div>
-    <div style="font-size:11px;color:var(--muted);padding:4px 14px;text-transform:uppercase;letter-spacing:.06em">การอัพเดท</div>
+    <div style="font-size:11px;color:var(--muted);padding:4px 14px;text-transform:uppercase;letter-spacing:.06em" class="sidebar-section-label">การอัพเดท</div>
     <div class="nav-item" onclick="setView('upd1',this)">
-      <span class="nav-icon">🟢</span> อัพเดท 1 ครั้ง
+      <span class="nav-icon">🟢</span><span class="nav-label"> อัพเดท 1 ครั้ง</span>
     </div>
     <div class="nav-item" onclick="setView('upd2',this)">
-      <span class="nav-icon">🟡</span> อัพเดท 2 ครั้ง
+      <span class="nav-icon">🟡</span><span class="nav-label"> อัพเดท 2 ครั้ง</span>
     </div>
     <div class="nav-item" onclick="setView('upd3',this)">
-      <span class="nav-icon">🔴</span> อัพเดท 3+ ครั้ง
+      <span class="nav-icon">🔴</span><span class="nav-label"> อัพเดท 3+ ครั้ง</span>
     </div>
     <div style="border-top:1px solid var(--border);margin:8px 0"></div>
     <div class="nav-item" onclick="setView('waiting',this)" id="nav-waiting">
-      <span class="nav-icon">⏰</span> รอติดตาม <span id="waiting-count" style="margin-left:auto;background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span>
+      <span class="nav-icon">⏰</span><span class="nav-label"> รอติดตาม</span> <span id="waiting-count" style="margin-left:auto;background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span>
     </div>
     <div style="border-top:1px solid var(--border);margin:8px 0"></div>
     <div class="nav-item" onclick="openReportView(this)">
-      <span class="nav-icon">📊</span> รายงาน
+      <span class="nav-icon">📊</span><span class="nav-label"> รายงาน</span>
     </div>
   </nav>
 
+  <main class="main">
   <!-- REPORT VIEW -->
   <div id="reportView" style="display:none">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px">
@@ -817,7 +873,7 @@ body{
 
 <script>
 // ── CONFIG ──
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwjszKvV_OrCO7GD2QThPwjanH7hFjgTIDprAd-QHcIiU-Xos6YONnjZk8MSmbS8mes/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcFCD-rmIDaxm6uNJgC-O7itkWC9SUDj1A1pbI6Ij4A6Ycsfq4dTmhFiKa3JrXEmcK/exec';
 
 // ── LINE NOTIFY ──
 function notifyGAS(params){
@@ -1137,6 +1193,14 @@ function updateSummary(){
   document.getElementById('cnt-other').textContent=cnt.other;
 }
 
+// ── SIDEBAR TOGGLE (mobile) ──
+function toggleSidebar(){
+  const sidebar  = document.querySelector('.sidebar');
+  const overlay  = document.getElementById('sidebarOverlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('open');
+}
+
 // ── REPORT ──
 function openReportView(el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -1205,6 +1269,11 @@ function setView(v, el){
   el.classList.add('active');
   document.getElementById('reportView').style.display='none';
   document.getElementById('mainView').style.display='';
+  // ปิด sidebar บนมือถือ
+  if(window.innerWidth<=600){
+    document.querySelector('.sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+  }
   renderTable();
 }
 
